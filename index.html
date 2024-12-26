@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Виселица</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid black;
+      display: block;
+      margin: 20px auto;
+    }
+    #game-status {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+    #word {
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 5px;
+    }
+    #guessed-letters {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    #level-selection {
+      margin: 20px;
+    }
+    #restart-button {
+      margin-top: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>ВИСЕЛИЦА</h1>
+  <canvas id="hangmanCanvas" width="200" height="300"></canvas>
+  <div id="game-status">Выберите уровень сложности:</div>
+  <div id="level-selection">
+    <button onclick="startGame('легкий')">Легкий</button>
+    <button onclick="startGame('средний')">Средний</button>
+    <button onclick="startGame('сложный')">Сложный</button>
+  </div>
+  <div id="word"></div>
+  <div id="guessed-letters"></div>
+  <input type="text" id="letter-input" maxlength="1" placeholder="Введите букву" />
+  <button id="guess-button">Угадать</button>
+  <button id="restart-button" onclick="restartLevel()">Перезапустить уровень</button>
+
+ 
+  
+
+  <script>
+    const canvas = document.getElementById("hangmanCanvas");
+    const ctx = canvas.getContext("2d");
+    const statusEl = document.getElementById("game-status");
+    const wordEl = document.getElementById("word");
+    const guessedLettersEl = document.getElementById("guessed-letters");
+    const letterInput = document.getElementById("letter-input");
+    const guessButton = document.getElementById("guess-button");
+    const levelSelection = document.getElementById("level-selection");
+    const restartButton = document.getElementById("restart-button");
+
+    // Этапы рисования (виселица + человечек)
+    function drawHangman(step) {
+      switch (step) {
+        case 1: // Рисуем основание
+          ctx.beginPath();
+          ctx.moveTo(10, 290);
+          ctx.lineTo(190, 290);
+          ctx.stroke();
+          break;
+        case 2: // Рисуем стойку
+          ctx.beginPath();
+          ctx.moveTo(50, 290);
+          ctx.lineTo(50, 50);
+          ctx.stroke();
+          break;
+        case 3: // Рисуем перекладину
+          ctx.beginPath();
+          ctx.moveTo(50, 50);
+          ctx.lineTo(150, 50);
+          ctx.stroke();
+          break;
+        case 4: // Рисуем верёвку
+          ctx.beginPath();
+          ctx.moveTo(150, 50);
+          ctx.lineTo(150, 100);
+          ctx.stroke();
+          break;
+        case 5: // Рисуем голову
+          ctx.beginPath();
+          ctx.arc(150, 120, 20, 0, Math.PI * 2);
+          ctx.stroke();
+          break;
+        case 6: // Рисуем тело
+          ctx.beginPath();
+          ctx.moveTo(150, 140);
+          ctx.lineTo(150, 200);
+          ctx.stroke();
+          break;
+        case 7: // Рисуем левую руку
+          ctx.beginPath();
+          ctx.moveTo(150, 160);
+          ctx.lineTo(130, 180);
+          ctx.stroke();
+          break;
+        case 8: // Рисуем правую руку
+          ctx.beginPath();
+          ctx.moveTo(150, 160);
+          ctx.lineTo(170, 180);
+          ctx.stroke();
+          break;
+        case 9: // Рисуем левую ногу
+          ctx.beginPath();
+          ctx.moveTo(150, 200);
+          ctx.lineTo(130, 240);
+          ctx.stroke();
+          break;
+        case 10: // Рисуем правую ногу
+          ctx.beginPath();
+          ctx.moveTo(150, 200);
+          ctx.lineTo(170, 240);
+          ctx.stroke();
+          break;
+      }
+    }
+
+    // Словарь с вопросами и словами по уровням
+    const words = {
+      легкий: {
+        кот: "Какое животное любит молоко и мяукает?",
+        дом: "Где живет человек?",
+        мяч: "Чем играют в футбол?",
+        лес: "Где растут много деревьев?",
+        друг: "Как называют близкого человека?",
+      },
+      средний: {
+        лампа: "Что используется для освещения комнаты?",
+        зебра: "Какое животное полосатое и похоже на лошадь?",
+        птица: "Кто летает и чирикает?",
+        окно: "Через что можно увидеть улицу из комнаты?",
+        арбуз: "Какую ягоду можно есть летом и она большая?",
+      },
+      сложный: {
+        компьютер: "На чем работают программисты?",
+        библиотека: "Где можно взять книги для чтения?",
+        самолет: "На чем люди летают в небе?",
+        трактор: "Какая техника используется в поле?",
+        энциклопедия: "Как называется книга, где есть информация обо всем?",
+      },
+    };
+
+    // Функция для начала игры
+    function startGame(level) {
+      levelSelection.style.display = 'none'; // Прячем кнопки выбора уровня
+      restartButton.style.display = 'none'; // Прячем кнопку перезапуска уровня
+      const levelWords = words[level];
+      const wordEntries = Object.entries(levelWords);
+      let wordIndex = 0; // Индекс текущего слова
+      let currentRound = wordEntries[wordIndex];
+
+      // Начинаем игру с первого слова
+      let word = currentRound[0];
+      const question = currentRound[1];
+
+      let answerArray = Array(word.length).fill("_");
+      let remainingLetters = word.length;
+      let guessedLetters = [];
+      let mistakes = 0;
+
+      // Обновляем текст вопроса и слово
+      statusEl.textContent = `Уровень: ${level} - ${question}`;
+      wordEl.textContent = answerArray.join(" ");
+      guessedLettersEl.textContent = `Угаданные буквы: ${guessedLetters.join(", ")}`;
+
+      // Очищаем холст и рисуем виселицу заново
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawHangman(mistakes);
+
+      // Функция для обработки ввода
+      function submitGuess() {
+        const guess = letterInput.value.toLowerCase();
+        if (!guess || guess.length !== 1) {
+          alert("Введите одну букву.");
+          return;
+        }
+        if (guessedLetters.includes(guess)) {
+          alert("Вы уже угадывали эту букву.");
+          return;
+        }
+
+        guessedLetters.push(guess);
+        letterInput.value = "";  // Очищаем поле ввода после каждой буквы
+
+        let found = false;
+        for (let i = 0; i < word.length; i++) {
+          if (word[i] === guess) {
+            answerArray[i] = guess;
+            remainingLetters--;
+            found = true;
+          }
+        }
+
+        if (!found) {
+          mistakes++;
+          drawHangman(mistakes);
+          if (mistakes >= 10) {
+            statusEl.textContent = `Вы проиграли! Слово: ${word}`;
+            letterInput.disabled = true;
+            restartButton.style.display = 'block'; // Показываем кнопку перезапуска
+            return;
+          }
+        }
+
+        wordEl.textContent = answerArray.join(" ");
+        guessedLettersEl.textContent = `Угаданные буквы: ${guessedLetters.join(", ")}`;
+
+        if (remainingLetters === 0) {
+          wordIndex++;
+          if (wordIndex < wordEntries.length) {
+            currentRound = wordEntries[wordIndex];
+            word = currentRound[0];
+            answerArray = Array(word.length).fill("_");
+            remainingLetters = word.length;
+            guessedLetters = [];
+            wordEl.textContent = answerArray.join(" ");
+            guessedLettersEl.textContent = `Угаданные буквы: ${guessedLetters.join(", ")}`;
+            statusEl.textContent = `Уровень: ${level} - ${currentRound[1]}`;
+          } else {
+            statusEl.textContent = "Поздравляю! Вы победили!";
+            letterInput.disabled = true;
+            restartButton.style.display = 'block'; // Показываем кнопку перезапуска
+          }
+        }
+      }
+
+      // Привязываем событие к кнопке
+      guessButton.onclick = submitGuess;
+    }
+
+    // Функция для перезапуска уровня
+    function restartLevel() {
+      restartButton.style.display = 'none'; // Скрываем кнопку перезапуска
+      levelSelection.style.display = 'block'; // Показываем кнопки выбора уровня
+      statusEl.textContent = 'Выберите уровень сложности:';
+      guessedLettersEl.textContent = '';
+      wordEl.textContent = '';
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем холст
+      letterInput.disabled = false; // Разблокируем поле ввода
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
