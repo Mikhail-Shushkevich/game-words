@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Старт</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Центрируем по горизонтали */
+            align-items: center;    /* Центрируем по вертикали */
+            height: 100vh;          /* Высота экрана */
+            margin: 0;              /* Убираем отступы */
+            background-color: black; /* Фон для красоты */
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #jump {
+            font-size: 54px;
+            display: none; /* Прячем анимацию до её показа */
+            margin-top: 20px;
+        }
+        #jump span {
+            position: relative;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="welcome"><strong><em>Добро пожаловать в игру!</em></strong></h1>
+    <button id="startButton">Начать игру</button>
+
+    <div id="jump">
+        <strong><em>
+            <span>З</span>
+            <span>а</span>
+            <span>г</span>
+            <span>р</span>
+            <span>у</span>
+            <span>з</span>
+            <span>к</span>
+            <span>а</span>
+            <span>.</span>
+            <span>.</span>
+            <span>.</span>
+        </em></strong>
+    </div>
+    <style>
+        button {
+            background-color: #4CAF50; /* Цвет фона кнопки */
+            color: white;             /* Цвет текста */
+            border: none;             /* Убираем рамку */
+            padding: 15px 30px;       /* Отступы внутри кнопки */
+            text-align: center;       /* Выравнивание текста */
+            font-size: 18px;          /* Размер текста */
+            font-weight: bold;        /* Жирный текст */
+            border-radius: 8px;       /* Скруглённые углы */
+            box-shadow: 0 4px #2d6b35; /* Тень для объёма */
+            cursor: pointer;          /* Указатель при наведении */
+            transition: all 0.3s ease; /* Плавный переход для эффектов */
+        }
+
+        button:hover {
+            background-color: #45a049; /* Цвет при наведении */
+        }
+
+        button:active {
+            background-color: #3e8e41; /* Цвет при нажатии */
+            box-shadow: 0 2px #2d6b35; /* Тень при нажатии */
+            transform: translateY(2px); /* Сдвиг вниз */
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Функция для анимации "волны" текста
+            function jumpWave() {
+                $('#jump span').each(function (index) {
+                    setTimeout(() => {
+                        $(this).animate({ top: '-25px' }, 100)
+                               .animate({ top: '0px' }, 100);
+                    }, index * 100);
+                });
+            }
+
+            // Обработка нажатия кнопки "Начать игру"
+            $('#startButton').on('click', function () {
+                $('#welcome').fadeOut(); // Скрываем приветствие
+                $(this).fadeOut();       // Скрываем кнопку
+                $('#jump').fadeIn();     // Показываем "Загрузка..."
+                
+                // Запускаем анимацию
+                setInterval(jumpWave, 1000);
+
+                // Переход на вторую страницу через 6 секунд
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 6000);
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
